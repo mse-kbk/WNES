@@ -7,6 +7,10 @@
 #include "net/nullnet/nullnet.h"
 #include "dev/adxl345.h"
 
+#include "sys/log.h"
+#define LOG_MODULE "App"
+#define LOG_LEVEL LOG_LEVEL_INFO
+
 #define ACCM_READ_INTERVAL (CLOCK_SECOND / 100)  
 #define MOVEMENT_THRESHOLD 100  // Threshold
 #define LED_INT_ONTIME CLOCK_SECOND
@@ -47,7 +51,7 @@ PROCESS_THREAD(accel_process, ev, data) {
     static struct etimer et;
     static char payload_acc[] = "shkalarm";
 
-    int16_t x, y, z;
+    int16_t x;
 
     PROCESS_BEGIN();
 
@@ -67,16 +71,25 @@ PROCESS_THREAD(accel_process, ev, data) {
 
         /* Read acceleration values */
       x = accm_read_axis(X_AXIS);
-	    y = accm_read_axis(Y_AXIS);
-	    z = accm_read_axis(Z_AXIS);
-	    printf("x: %d y: %d z: %d\n", x, y, z);
+	    //y = accm_read_axis(Y_AXIS);
+	    //z = accm_read_axis(Z_AXIS);
+	    //printf("x: %d y: %d z: %d\n", x, y, z);
 
     if (x>MOVEMENT_THRESHOLD || x< -MOVEMENT_THRESHOLD){
+   
 		leds_on(LEDS_RED);
 		process_post(&led_process, ledOff_event, NULL);
+    strcpy(payload_acc, "shkalarm");
     memcpy(nullnet_buf, &payload_acc, sizeof(payload_acc));
     nullnet_len = sizeof(payload_acc);
+    
 		NETSTACK_NETWORK.output(NULL);
+
+
+
+    char b[11];
+    memcpy(&b, nullnet_buf, sizeof(b));
+    LOG_INFO("SENT in shake process %s %s from \n ", b, payload_acc);
 	  }
 		
 	}
@@ -88,6 +101,7 @@ PROCESS_END();
 /* Client process */
 PROCESS_THREAD(button_process, ev, data) {
     static char payload_btn[] = "btnalarm";
+    
 
     PROCESS_BEGIN();
 
@@ -100,7 +114,7 @@ PROCESS_THREAD(button_process, ev, data) {
 
     while (1) {
         /* Start timer for 100 Hz sampling */
-      PROCESS_WAIT_EVENT_UNTIL(
+      PROCESS_WAIT_EVENT_UNTIL(ev == sensors_event &&
 			data == &button_sensor);
 
 		leds_toggle(LEDS_GREEN);
@@ -111,6 +125,15 @@ PROCESS_THREAD(button_process, ev, data) {
 		/* Send the content of the packet buffer using the
 		 * broadcast handle. */
 		NETSTACK_NETWORK.output(NULL);
+
+  strcpy (payload_btn, "btnalarm");
+  memcpy(nullnet_buf, &payload_btn, sizeof(payload_btn));
+  nullnet_len = sizeof(payload_btn);
+
+
+char a[11];
+    memcpy(&a, nullnet_buf, sizeof(a));
+    LOG_INFO("SENT in button process %s from \n ", a);
 	  }
 		
 
