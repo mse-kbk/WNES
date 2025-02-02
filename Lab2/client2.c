@@ -12,7 +12,7 @@
 #define LOG_LEVEL LOG_LEVEL_INFO
 
 #define ACCM_READ_INTERVAL (CLOCK_SECOND / 100)  
-#define MOVEMENT_THRESHOLD 100  // Threshold
+#define MOVEMENT_THRESHOLD 200  // Threshold
 #define LED_INT_ONTIME CLOCK_SECOND
 
 static process_event_t ledOff_event;

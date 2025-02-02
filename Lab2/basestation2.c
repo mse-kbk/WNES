@@ -26,6 +26,8 @@ static struct etimer led_shk_timer;
 
 static int btn = 0;
 static int shk = 0;
+static clock_time_t btn_time = 0;
+static clock_time_t shk_time = 0;
 
 
 /* Callback function for received packets.
@@ -40,25 +42,26 @@ static void recv(const void *data, uint16_t len,
    
    char a[20];
    memcpy(&a, data, sizeof(a));
-   //LOG_INFO("GOT: %s", a);
    if (strcmp(a, "shkalarm") == 0) {
     LOG_INFO("SHKALARM: %s, %d, %d\n", a, btn, shk);
-      /* 0bxxxxx allows us to write binary values */
-      /* for example, 0b10 is 2 */
-    //   leds_off(LEDS_ALL);
-      leds_on(0b0001);
-      shk=1;
-   if (btn==1 && shk==1) {
+    shk=1;
+    shk_time = clock_time();
+    leds_on(0b0001);
+      
+   if ((shk_time - btn_time) <= CLOCK_SECOND*3) {
     leds_on(0b0100);
    }
 
       process_poll(&led_shk_process);
-   } else if (strcmp(a, "btnalarm") == 0) {
+   } 
+
+   else if (strcmp(a, "btnalarm") == 0) {
     LOG_INFO("BTNALARM, %s, %d, %d\n", a, btn, shk);
       btn=1;
-    //   leds_off(LEDS_ALL);
+      btn_time = clock_time();
       leds_on(0b0010);
-   if (btn==1 && shk==1) {
+
+   if ((btn_time - shk_time) <= CLOCK_SECOND*3){
     leds_on(0b0100);
    }
 
@@ -74,17 +77,15 @@ PROCESS_THREAD(led_shk_process, ev, data) {
   etimer_set(&led_shk_timer, CLOCK_SECOND*10);
   
   while(1){
-    PROCESS_WAIT_EVENT_UNTIL(ev==PROCESS_EVENT_POLL || etimer_expired(&led_shk_timer) );
+    PROCESS_WAIT_EVENT_UNTIL(ev==PROCESS_EVENT_POLL || etimer_expired(&led_shk_timer)); 
 
     if(ev == PROCESS_EVENT_POLL){
       etimer_restart(&led_shk_timer);
     }
 
-    if (etimer_expired(&led_shk_timer) && shk==1) {
+    if (etimer_expired(&led_shk_timer)) {
       leds_off(0b0101);
-    shk=0;
     }
-    
   }
   PROCESS_END();
 }
@@ -95,17 +96,15 @@ PROCESS_THREAD(led_btn_process, ev, data) {
   etimer_set(&led_btn_timer, CLOCK_SECOND*10);
   
   while(1){
-    PROCESS_WAIT_EVENT_UNTIL(ev==PROCESS_EVENT_POLL || etimer_expired(&led_btn_timer) );
+    PROCESS_WAIT_EVENT_UNTIL(ev==PROCESS_EVENT_POLL || etimer_expired(&led_btn_timer));
 
     if(ev == PROCESS_EVENT_POLL){
       etimer_restart(&led_btn_timer);
     }
 
-    if (etimer_expired(&led_btn_timer) && btn==1) {
+    if (etimer_expired(&led_btn_timer)) {
       leds_off(0b0110);
-    btn=0;
     }
-    
   }
   PROCESS_END();
 }
@@ -114,6 +113,7 @@ PROCESS_THREAD(led_btn_process, ev, data) {
 PROCESS_THREAD(basestation_process, ev, data) {
 	PROCESS_BEGIN();
     leds_off(0b1111);
+    
 	/* Initialize NullNet */
 	nullnet_set_input_callback(recv);
 
