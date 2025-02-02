@@ -36,7 +36,7 @@ implementation
     event void Boot.booted() 
     {
 		call AccelControl.start(); //Starts accelerometer
-   		call TimerAccel.startPeriodic(1000); //Starts timer
+   		call TimerAccel.startPeriodic(100); //Starts timer with 100ms -> 10Hz
 			call Button.enable();
 
     }
