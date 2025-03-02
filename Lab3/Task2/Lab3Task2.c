@@ -1,6 +1,7 @@
 #include "contiki.h"
 #include "sys/node-id.h"
 #include "sys/log.h"
+#include "net/ipv6/uip-ds6-nbr.h"
 #include "net/ipv6/uip-ds6-route.h"
 #include "net/ipv6/uip-sr.h"
 #include "net/mac/tsch/tsch.h"
@@ -38,24 +39,24 @@ PROCESS_THREAD(node_process, ev, data)
     /* Print out routing tables every minute */
     etimer_set(&et, CLOCK_SECOND * 10);
     while(1) {
-      is_coordinator = (node_id == 1);
-      LOG_INFO("IDD %d %d", node_id, is_coordinator);
-      if (uip_ds6_route_num_routes() == 0 && !is_coordinator) {
-        leds_on(LEDS_RED);
-        leds_off(LEDS_GREEN);
-        leds_off(LEDS_YELLOW);
-      } else if (!is_coordinator) {
-        leds_off(LEDS_RED);
-        leds_off(LEDS_GREEN);
-        leds_on(LEDS_YELLOW);
-      } else if (is_coordinator)
+      int nn = uip_ds6_nbr_num();
+      
+      if (node_id == 1)
       {
         leds_off(LEDS_RED);
         leds_on(LEDS_GREEN);
         leds_off(LEDS_YELLOW);
+      } else if (uip_ds6_route_num_routes() == 0 && nn > 0) {
+        leds_on(LEDS_RED);
+        leds_off(LEDS_GREEN);
+        leds_off(LEDS_YELLOW);
+      } else if (uip_ds6_route_num_routes() > 0) {
+        leds_off(LEDS_RED);
+        leds_off(LEDS_GREEN);
+        leds_on(LEDS_YELLOW);
       }
       
-
+        LOG_INFO("NHN: %d\n", nn);
 
         LOG_INFO("Routing entries: %u\n", uip_ds6_route_num_routes());
         uip_ds6_route_t *route = uip_ds6_route_head();

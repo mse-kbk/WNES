@@ -60,8 +60,9 @@ static void recv(const void *data, uint16_t len,
   if (event_history[0] != 0 && event_history[MAX_NUMBER_OF_EVENTS-1] != 0)
   {
     if ((event_history[MAX_NUMBER_OF_EVENTS-1]->time-event_history[0]->time)/CLOCK_SECOND < 30) {
-  leds_toggle(LEDS_YELLOW);
-    }
+  leds_on(LEDS_YELLOW);
+    } else {
+		leds_off(LEDS_YELLOW);
   }
   DEBUG();
   leds_toggle(LEDS_GREEN);
